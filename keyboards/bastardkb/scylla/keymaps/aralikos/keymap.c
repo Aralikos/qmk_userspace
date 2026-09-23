@@ -36,9 +36,23 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 // change, and in reply to a 0xFE request so the bar can ask on startup.
 #define LAYER_REPORT 0xFE
 
+// Each layer lights the whole board in its own colour. Base is whatever is in
+// EEPROM (#eb43ff by default); the others are set without touching EEPROM.
+// L1 #00e5ff cyan, L2 #a6ff3f neon lime.
+static const uint8_t layer_hs[][2] = {
+    [1] = {132, 255},
+    [2] = {62, 192},
+};
+
 layer_state_t layer_state_set_user(layer_state_t state) {
-    uint8_t report[32] = {LAYER_REPORT, get_highest_layer(state)};
+    uint8_t layer = get_highest_layer(state);
+    uint8_t report[32] = {LAYER_REPORT, layer};
     raw_hid_send(report, sizeof(report));
+    if (layer == 0) {
+        rgb_matrix_reload_from_eeprom();
+    } else {
+        rgb_matrix_sethsv_noeeprom(layer_hs[layer][0], layer_hs[layer][1], rgb_matrix_get_val());
+    }
     return state;
 }
 
